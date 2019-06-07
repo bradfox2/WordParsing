@@ -174,4 +174,4 @@ def run(doc_path):
     pprint.pprint(j)
 
 if __name__ == "__main__":
-    pass
+    run()
