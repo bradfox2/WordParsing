@@ -61,67 +61,76 @@ def request_to_file(r, file_name, save_to_dir):
     Arguments:
         r {Request} -- request object
         file_name {str} -- file name
+        save_to_dir{Path} -- Path to save_to_dir
     """
-    path = PurePath().joinpath(save_to_dir, file_name)
+    if not save_to_dir.exists():
+        save_to_dir.mkdir()
+    path = Path.cwd().joinpath(save_to_dir, file_name)
     with open(path, 'wb') as f:
             f.write(r.content)
     return True
 
-def convert_file(unoconv, path, file_format, save_dir):
+def convert_file(unoconv, path, file_format, save_path):
     """Convert file at path to a new file type by using Unoconv object.
     
     Arguments:
         conversion_url {Unoconv} -- Unoconv object that points at Unoconv server used for file conversion.
-        path {str} -- Path of file that will be converted or directory of files
+        path {Path} -- Path of file that will be converted or directory of files
         file_format {str} -- File will be converted to this format.
 
     Returns:
         boolean - True if successful, None if not. 
     """
-    
-    #//TODO: Allow path to already be a Path object.
 
-    path = Path(path)
     if path.exists:
+        print('Opening {}'.format(path))
         file = {'file': open(path, 'rb')}
     else:
-        return ValueError('{} does not exist.'.format(path))
+        raise ValueError('{} does not exist.'.format(path))
     if file_format not in unoconv.formats:
-        return ValueError('Cannot convert to {} in this instance of Unoconv'.format(file_format))
+        raise ValueError('Cannot convert to {} in this instance of Unoconv'.format(file_format))
 
+    if type(save_path) is not Path:
+        save_path = Path(save_path)
+    
     url = unoconv.build_conversion_url(file_format)
     r = requests.post(url, files=file)
+
     if r:
         file_name = path.stem +'.' + unoconv.fmt2ext[file_format]
-        return True if request_to_file(r, file_name, save_dir) else None
+        return True if request_to_file(r, file_name, save_path) else None
     else:
         warnings.warn('Status Code {} from {}'.format(r.status_code, url))
         return None
 
-def convert(unoconv, path, ext, file_format, save_dir):
+def convert(unoconv, path, ext, file_format, save_path):
     """Convert file at path or files in directory at path to file format.
     
     Arguments:
         unoconv {Unoconv} -- Unoconv object
         path {str} -- Directory path where files reside.
+        ext {str} -- Convert this extension.
         file_format {str} -- Convert to this format.
     """
     file_path = Path(path)
-    save_dir = Path(path)
+    save_dir = Path(save_path)
     save_dir.mkdir(exist_ok=True)
     
     if file_path.is_dir():
         files_0, files_1 = itertools.tee(file_path.glob('*'+'.'+ext)) #clone the generator so we can see the count of files
         len_files = sum(1 for _ in files_0) 
         print('{} files for conversion.'.format(len_files))
-        for file_ in enumerate(files_1):
-            print(file_)
-            #//TODO:
-            #convert_file(unoconv, str(file_), file_format, save_dir)
+        for idx, file_ in enumerate(files_1):
+            convert_file(unoconv, file_, file_format, save_path)
+        return True
     else:
-        convert_file(unoconv, file_path, file_format, save_dir)
+        convert_file(unoconv, file_path, file_format, save_path)
+        return True
+        
+    return None
 
 if __name__ == "__main__":
     u = Unoconv('http://s1:3000')
     #convert_file(u, 'docs/7787538.DOC', 'docx', 'converted')
-    convert(u, 'docs', 'docx', 'converted', 'doc')
+    convert(unoconv=u, path='docs', ext='doc', file_format='docx', save_path='converted')
+
