@@ -121,12 +121,13 @@ def convert(unoconv, path, ext, file_format, save_path):
         len_files = sum(1 for _ in files_0) 
         print('{} files for conversion.'.format(len_files))
         for idx, file_ in enumerate(files_1):
+            print('Converting file {} of {}'.format(idx, len_files))
             convert_file(unoconv, file_, file_format, save_path)
         return True
     else:
         convert_file(unoconv, file_path, file_format, save_path)
         return True
-        
+
     return None
 
 if __name__ == "__main__":

@@ -1,23 +1,31 @@
 import inspect
+import itertools
 import json
 import os
 import pprint
 from fractions import Fraction
 from idlelib import paragraph
+from pathlib import Path
 from tkinter.ttk import Style
 from zipfile import BadZipfile
 
 import click
 from docx import Document, styles
 
-from wip.convert import save_as_docx
+#exclude paragraphs from parsing with this type of style. Notes, Tables, etc.
+parse_exclude_paragraph_styles = {'Note'}
 
 wsl_headings = set(['WSL1Bld','WSL1'])
 
-#doc_path = save_as_docx(os.getcwd()+'\\8218200.doc')
-
 def get_left_indent(paragraph):
-    '''get left indent value for a paragraph'''
+    """get left indent value for a paragraph
+    
+    Arguments:
+        paragraph {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
     if paragraph.paragraph_format.left_indent is not None:
         return paragraph.paragraph_format.left_indent
     s = paragraph.style
@@ -29,7 +37,14 @@ def get_left_indent(paragraph):
     return 0
 
 def get_first_line_indent(paragraph):
-    '''get left indent value for a paragraph'''
+    """get first line indent value for a paragraph
+    
+    Arguments:
+        paragraph {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
     if paragraph.paragraph_format.first_line_indent is not None:
         return paragraph.paragraph_format.first_line_indent
     s = paragraph.style
@@ -41,9 +56,25 @@ def get_first_line_indent(paragraph):
     return 0
 
 def emu_to_inches(emu):
+    """English Metric Units(EMU) units to inches
+    
+    Arguments:
+        emu {num}
+    
+    Returns:
+        num 
+    """
     return float(emu)/914400
 
 class Node(object):
+    """General node class for parent/child relationship building.
+    
+    Arguments:
+        object {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
     def __init__(self, value, parent = None):
         self.parent = parent
         self.children = []
@@ -52,9 +83,18 @@ class Node(object):
     def __repr__(self):
         if not self.value:
             return str(None)
-        return f'id: {self.value.id}, children: {[_.value.id for _ in self.children]}'
+        #return f'id: {self.value.id}, children: {[_.value.id for _ in self.children]}'
+        return print_steps(self)
 
 class Step(object):
+    """A step in a document, where each paragraph represents a new step.
+    
+    Arguments:
+        object {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
     def __init__(self, id, paragraph):
         self.text = paragraph.text
         self.tab_count = self.count_tabs()
@@ -72,9 +112,16 @@ class Step(object):
         return self.text.count('\t')
 
 def compare(last_node, node):
+    """Compare 2 nodes to obtain place in heirarchy.
     
-    print(node.value)
-
+    Arguments:
+        last_node {[type]} -- [description]
+        node {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
+    
     if last_node.value is None:
         return 1
 
@@ -95,7 +142,6 @@ def compare(last_node, node):
             if last_node.parent.value is not None:
                 last_node = last_node.parent
             else:
-                print(last_node.value.text)
                 break
         return d
 
@@ -139,12 +185,15 @@ def parse_children(root_node, steps, compare):
     return root_node
 
 def print_steps(node, depth = 0):
+    """pretty print node family"""
     start_string = '\t' * depth
     print('{}{}'.format(start_string, node.value))
     for child in node.children:
         print_steps(child, depth = depth + 1)
 
 def default(o):
+    """default handler for a type that JSON system package cannot parse automatically. parent step as key, child steps as value
+    """
     if type(o) is Node:
         key = ' '.join(o.value.text.split()) if o.value is not None else 'Root'
         has_children = len(o.children) > 0
@@ -152,26 +201,45 @@ def default(o):
             return {key:o.children}
         return key
 
-@click.command()
-@click.option('--doc_path', help='Path to file for parsing.')
-def run(doc_path):
-    if not doc_path:
-        raise ValueError("Need doc_path.")
 
+def create_document_nodes(doc_path):
     document = Document(doc_path)
 
-    steps = [Step(idx, paragraph) for idx, paragraph in enumerate(document.paragraphs) if paragraph.style.name != 'Note' and paragraph.text.strip() != '']
+    steps = [Step(idx, paragraph) for idx, paragraph in enumerate(document.paragraphs) if paragraph.style.name not in parse_exclude_paragraph_styles and paragraph.text.strip() != '']
     steps.reverse()
 
     root_node = parse_children(Node(None), steps, compare)
-    print_steps(root_node)
-    #file_name = os.path.basename(doc_path)
+    return root_node
 
-    with open('test.json','w') as f:
-        json.dump(root_node, f, default=default)
+@click.command()
+@click.option('--doc_path', help='Path to file for parsing.')
+@click.option('--save_path', help='Directory to save parsed representation.')
+def parse_doc(doc_path, save_path):
+    if not doc_path:
+        raise ValueError("Need doc_path.")
 
-    j = json.dumps(root_node, default=default)
-    pprint.pprint(j)
+    file_path = Path(doc_path)
+    save_dir = Path(save_path)
+    save_dir.mkdir(exist_ok=True)
+    
+    if file_path.is_dir():
+        files_0, files_1 = itertools.tee(file_path.glob('*.docx'))
+        len_files = sum(1 for _ in files_0) 
+        print('{} files for parse.'.format(len_files))
+        for idx, file_ in enumerate(files_1):
+            print('Converting file {} of {}'.format(idx+1, len_files))
+            root_node = create_document_nodes(file_)
+            with open(save_dir.joinpath(file_.stem + '.json'),'w') as f:
+                json.dump(root_node, f, default=default)
+        return True
+    else:
+        root_node = create_document_nodes(file_path)
+        with open(save_dir.joinpath(file_path.stem + '.json'),'w') as f:
+            json.dump(root_node, f, default=default)
+        return True
 
+    return None
+
+#TODO:  Document information also returned in the JSON.
 if __name__ == "__main__":
-    run()
+    parse_doc()

@@ -110,8 +110,6 @@ class WorkInstruction(SWMSDocument):
 
 swms_media = os.path.isdir(SWMS_MEDIA_FILER_PATH)
 
-
-
 class Document(object):
     def __init__(self, file):
         self.docx_obj = docx_doc(file)
