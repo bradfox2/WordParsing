@@ -11,8 +11,6 @@ from docx import styles
 
 from dotenv import load_dotenv
 
-from wip.convert import save_as_docx
-
 load_dotenv(verbose=True, override=True)
 DEBUG = os.getenv('DEBUG')
 SWMS_MEDIA_FILER_PATH = os.getenv('SWMS_MEDIA_FILER_PATH')
@@ -109,8 +107,6 @@ class WorkInstruction(SWMSDocument):
         self.steps = []     
 
 swms_media = os.path.isdir(SWMS_MEDIA_FILER_PATH)
-
-
 
 class Document(object):
     def __init__(self, file):
