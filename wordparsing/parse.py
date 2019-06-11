@@ -15,6 +15,8 @@ import click
 from docx import Document, styles
 
 from wordparsing.utils import count_files
+#exclude paragraphs from parsing with this type of style. Notes, Tables, etc.
+parse_exclude_paragraph_styles = {'Note'}
 
 #exclude paragraphs from parsing with this type of style. Notes, Tables, etc.
 parse_exclude_paragraph_styles = {'Note'}
