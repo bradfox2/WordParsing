@@ -1,3 +1,5 @@
+"""Parse word document into JSON."""
+
 import inspect
 import itertools
 import json
@@ -11,6 +13,8 @@ from zipfile import BadZipfile
 
 import click
 from docx import Document, styles
+
+from wordparsing.utils import count_files
 
 #exclude paragraphs from parsing with this type of style. Notes, Tables, etc.
 parse_exclude_paragraph_styles = {'Note'}
@@ -201,8 +205,15 @@ def default(o):
             return {key:o.children}
         return key
 
-
 def create_document_nodes(doc_path):
+    """Create Node heirarchy from a word document.
+    
+    Arguments:
+        doc_path {str} -- path to word doc
+    
+    Returns:
+        Node -- Root Node with the document paragraphs(steps) as children.
+    """
     document = Document(doc_path)
 
     steps = [Step(idx, paragraph) for idx, paragraph in enumerate(document.paragraphs) if paragraph.style.name not in parse_exclude_paragraph_styles and paragraph.text.strip() != '']
@@ -211,10 +222,19 @@ def create_document_nodes(doc_path):
     root_node = parse_children(Node(None), steps, compare)
     return root_node
 
-@click.command()
-@click.option('--doc_path', help='Path to file for parsing.')
-@click.option('--save_path', help='Directory to save parsed representation.')
 def parse_doc(doc_path, save_path):
+    """Parse docx document or documents in doc_path into heirarchical JSON file.
+    
+    Arguments:
+        doc_path {[type]} -- [description]
+        save_path {[type]} -- [description]
+    
+    Raises:
+        ValueError: [description]
+    
+    Returns:
+        [type] -- [description]
+    """
     if not doc_path:
         raise ValueError("Need doc_path.")
 
@@ -240,6 +260,12 @@ def parse_doc(doc_path, save_path):
 
     return None
 
-#TODO:  Document information also returned in the JSON.
+@click.command()
+@click.option('--doc_path', help='Path to file for parsing.')
+@click.option('--save_path', help='Directory to save parsed representation.')
+def parse(doc_path, save_path):
+    return parse_doc(doc_path, save_path)
+
+#TODO:  Return document metadata in the JSON.
 if __name__ == "__main__":
-    parse_doc()
+    parse() 

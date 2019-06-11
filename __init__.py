@@ -1,1 +1,1 @@
-from wip import *
+from wordparsing import *

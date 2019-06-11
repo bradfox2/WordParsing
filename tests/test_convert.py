@@ -2,7 +2,7 @@
 """
 
 import requests
-from wip.convert import request_to_file, convert, Unoconv
+from wordparsing.convert import request_to_file, convert, Unoconv
 from pathlib import Path
 import pytest
 import os
