@@ -3,9 +3,15 @@
 #running w finetuned model from cr classification training
 #bert-serving-start -model_dir model/uncased_L-12_H-768_A-12/ -tuned_model_dir=model/classification_fine_tuning_test_1/ -ckpt_name="model.ckpt-343" -num_worker=1 -port 8190 -port_out 8191 -max_seq_len 100
 
+from timeit import default_timer as timer
+#1.3s for 150 bert calls on 1080TI
+#21s for 150 bert calls on i5-8600k
+
+start = timer()
+num_bert_calls = 0 
+
 from bert_serving.client import BertClient
 bc = BertClient(port=8190, port_out=8191)
-bc.encode(['First do it'])
 
 import json
 import numpy as np 
@@ -33,7 +39,8 @@ with open('tests/converts/8218200.json') as f:
     doc = json.load(f)
 d1 = convert_dict(doc,[])       
 bert_vectors = [bc.encode([i]) for i in d1 if i.strip() not in  ['', None, 'None']]
-d1_a = np.mean(np.array(bert_vectors), axis=0)
+d1_a = np.mean(np.array(bert_vectors), axis=0) 
+num_bert_calls+= len(bert_vectors)
 
 ### doc 2 
 with open('tests/converts/7787538.json') as f:
@@ -41,6 +48,7 @@ with open('tests/converts/7787538.json') as f:
 d2 = convert_dict(doc, [])       
 bert_vectors = [bc.encode([i]) for i in d2 if i.strip() not in  ['', None, 'None']]
 d2_a = np.mean(np.array(bert_vectors), axis=0)
+num_bert_calls+= len(bert_vectors)
 
 #sim
 cos_sim(d1_a[0],d2_a[0])
@@ -51,6 +59,7 @@ with open('tests/converts/8218200.json') as f:
 d1 = convert_dict(doc,[])       
 bert_vectors = [bc.encode([i]) for i in d1 if i.strip() not in  ['', None, 'None']]
 d1_a = np.mean(np.array(bert_vectors), axis=0)
+num_bert_calls+= len(bert_vectors)
 
 ### doc 2 
 with open('tests/docs/random_docs/recipe_1.json') as f:
@@ -58,7 +67,11 @@ with open('tests/docs/random_docs/recipe_1.json') as f:
 d2 = convert_dict(doc, [])       
 bert_vectors = [bc.encode([i]) for i in d2 if i.strip() not in  ['', None, 'None']]
 d2_a = np.mean(np.array(bert_vectors), axis=0)
+num_bert_calls+= len(bert_vectors)
 
 #sim
 cos_sim(d1_a[0],d2_a[0])
 
+end = timer()
+print(end - start)
+print(num_bert_calls)
