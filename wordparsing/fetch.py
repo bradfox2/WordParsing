@@ -24,6 +24,7 @@ SWMS_MEDIA_USER_PASSWORD = os.getenv('SWMS_MEDIA_USER_PASSWORD')
 class Document(object):
     def __init__(self, file):
         self.docx_obj = docx_doc(file)
+        self.file = file
 
 class RemoteMount(object):
     '''Mount a remote file system'''
@@ -89,7 +90,7 @@ class RemoteMount(object):
         return f"net use /user:{user} {remote_path} {password}"
 
 class SWMSDocument(Document):
-    
+
     @classmethod
     def all_from_wm_id(cls, wm_id, dbcon):
         """ Returns a list of SWMSDocument objects related to the provided WM_ID """
@@ -106,9 +107,8 @@ class SWMSDocument(Document):
     @classmethod
     def from_file_path(cls, file_path):
         #TODO: fix this
-        pass
-        #full_path = Path(cls.swms_media_path).joinpath(file_path)
-        #return SWMSDocument(Document(full_path))
+        full_path = Path(cls.swms_media_path).joinpath(file_path)
+        return SWMSDocument(Document(full_path))
 
     @classmethod
     def from_filer_file_name(cls, remote_mount, file_name):
@@ -118,32 +118,18 @@ class SWMSDocument(Document):
 
     def __init__(self, document):
         self.document = document
-        self.path = None
-
-#mount = SWMSDocument.mount_swms_media_path(SWMS_MEDIA_FILER_PATH)
+        self.path = document.file
 
 class WorkInstruction(SWMSDocument):
-    def __init__(self, wm_id, wt_id, rev, type, file_path, SWMS_MEDIA_ID):
-        SWMSDocument.__init__(file_path)
-        self.file_path = file_path
-        self.wm_id
-        self.wt_it
-        self.rev
-        self.type
+    def __init__(self, wm_id, wt_id, rev, typ, file_path, SWMS_MEDIA_ID):
+        #TODO: Refactor SWMSDocument into traditional factory pattern.
+        super().__init__(Document(file_path))
+        self.file_path = file_path 
+        self.wm_id = wm_id
+        self.wt_it = wt_id
+        self.rev = rev
+        self.typ = typ
         self.steps = []     
-
-# class SWMSDocument(Document):
-#     def __init__(self, SWMS_SERVER_PATH):
-#         self.smid = SWMS_SERVER_PATH
-#         assert os.name == 'nt'      
-       
-#     @staticmethod
-#     def fetch_documents(docs, conn):
-#         raise NotImplementedError
-
-# class WorkInstruction(SWMSDocument):
-#     def __init__(self, SWMS_MEDIA_ID):
-#         pass
 
 if __name__ == '__main__':
     pass
