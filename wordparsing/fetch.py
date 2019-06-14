@@ -107,7 +107,7 @@ class SWMSDocument(Document):
     @classmethod
     def from_file_path(cls, file_path):
         #TODO: fix this
-        full_path = Path(cls.swms_media_path).joinpath(file_path)
+        full_path = Path(file_path)
         return SWMSDocument(Document(full_path))
 
     @classmethod
