@@ -16,3 +16,9 @@ document.paragraphs[0].style.paragraph_format.left_indent
 if none, then, get indents from parent styles through inheritance chain
 
 indents give starting point, then count tabs 
+
+
+## Testing
+```bash
+$ pytest #--uno_server_url UNOCONV Server --keep_files True to keep conversion files in Test dir
+```

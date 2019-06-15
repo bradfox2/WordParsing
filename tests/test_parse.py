@@ -31,7 +31,7 @@ def save_path(keep_files):
 
 def test_dir_parse(save_path):
     assert parse_doc(doc_path, save_path) == True
-    assert count_files(save_path) == 2
+    assert count_files(save_path) >= 2
 
     with open(save_path.joinpath('7787538.json')) as f:
         j = json.load(f)

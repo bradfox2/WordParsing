@@ -6,7 +6,7 @@ def pytest_addoption(parser):
     """
     parser.addoption("--uno_server_url", action='store', default='http://s1:3000', help='Unoconv server url.')
 
-    parser.addoption("--keep_files", action='store', default=False, help='Keep the directories and files created by testing.')
+    parser.addoption("--keep_files", action='store', default=True, help='Keep the directories and files created by testing.')
 
 @pytest.fixture
 def uno_server_url(request):
