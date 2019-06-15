@@ -34,11 +34,11 @@ class TextPart(Base):
     models = relationship('Embedding', back_populates='textpart')
     text_type = Column(TEXT)
     uuid = Column(TEXT, default = str(uuid.uuid4()))
-    raw_text = Column(TEXT)
+    raw_text = Column(TEXT, index=True, unique=True)
     serialized_file = Column(BLOB)
     file_name = Column(TEXT)
     json_str = Column(TEXT)
-    file_hash = Column(TEXT)
+    file_hash = Column(TEXT, index=True, unique=True)
     hash_algo = Column(TEXT)
     create_dttm = Column(DateTime, default=datetime.datetime.utcnow)
 
