@@ -130,6 +130,10 @@ class WorkInstruction(SWMSDocument):
         self.rev = rev
         self.typ = typ
         self.steps = []     
+    
+class WorkInstructionStep(SWMSDocument):
+    #TODO: Refactor fetching classes and types vs data_classes types, and doc_types as they are stored in the db
+    pass
 
 if __name__ == '__main__':
     pass
