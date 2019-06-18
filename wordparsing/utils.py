@@ -36,3 +36,4 @@ def heirarchical_dict_to_flat_list(d, txt):
 
 def cos_sim(A,B):
     return np.dot(A, B) / (np.sqrt(np.dot(A,A)) * np.sqrt(np.dot(B,B)))
+

@@ -12,4 +12,4 @@ db_type_ok = {'oracle', 'sqlite'}
 if db_type not in db_type_ok:
     raise NotImplementedError(f'Need dbtype in {db_type_ok}')
 
-engine = create_engine(TEXT_DB_PATH, echo=True)
+engine = create_engine(TEXT_DB_PATH)

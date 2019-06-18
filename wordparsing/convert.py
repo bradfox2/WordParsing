@@ -98,7 +98,7 @@ def convert_file(unoconv, path, file_format, save_path):
 
     if r:
         file_name = path.stem +'.' + unoconv.fmt2ext[file_format]
-        return True if request_to_file(r, file_name, save_path) else None
+        return save_path.joinpath(Path(file_name)) if request_to_file(r, file_name, save_path) else None
     else:
         warnings.warn('Status Code {} from {}'.format(r.status_code, url))
         return None
@@ -108,13 +108,14 @@ def convert(unoconv, path, ext, file_format, save_path):
     
     Arguments:
         unoconv {Unoconv} -- Unoconv object
-        path {str} -- Directory path where files reside.
-        ext {str} -- Convert this extension.
+        path {str} -- Path to directory where files reside.
+        ext {str} -- File extension convert from this extension.
         file_format {str} -- Convert to this format.
+        save_path {str} -- Save to this directory.
     """
     file_path = Path(path)
     save_dir = Path(save_path)
-    save_dir.mkdir(exist_ok=True)
+    save_dir.mkdir(exist_ok=True, parents=True)
     
     if file_path.is_dir():
         files_0, files_1 = itertools.tee(file_path.glob('*'+'.'+ext)) #clone the generator so we can see the count of files
@@ -123,16 +124,15 @@ def convert(unoconv, path, ext, file_format, save_path):
         for idx, file_ in enumerate(files_1):
             print('Converting file {} of {}'.format(idx, len_files))
             convert_file(unoconv, file_, file_format, save_path)
-        return True
+        return file_path
     else:
-        convert_file(unoconv, file_path, file_format, save_path)
-        return True
-
+        return convert_file(unoconv, file_path, file_format, save_path)
+        
     return None
 
 if __name__ == "__main__":
     #//TODO: Spin up UNOCOV docker service automatically
     u = Unoconv('http://s1:3000')
     #convert_file(u, 'docs/7787538.DOC', 'docx', 'converted')
-    convert(unoconv=u, path='docs', ext='doc', file_format='docx', save_path='converted')
+    convert(unoconv=u, path='./tests/docs', ext='doc', file_format='docx', save_path='converted')
 

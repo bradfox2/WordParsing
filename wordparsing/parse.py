@@ -253,12 +253,13 @@ def parse_doc(doc_path, save_path):
             root_node = create_document_nodes(file_)
             with open(save_dir.joinpath(file_.stem + '.json'),'w') as f:
                 json.dump(root_node, f, default=default)
-        return True
+        return save_dir
     else:
         root_node = create_document_nodes(file_path)
-        with open(save_dir.joinpath(file_path.stem + '.json'),'w') as f:
+        save_path = save_dir.joinpath(file_path.stem + '.json') 
+        with open(save_path,'w') as f:
             json.dump(root_node, f, default=default)
-        return True
+        return save_path
 
     return None
 

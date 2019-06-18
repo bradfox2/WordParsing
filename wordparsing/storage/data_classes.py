@@ -21,6 +21,11 @@ from wordparsing.storage import db_type, engine
 
 Base = declarative_base()
 
+def generate_uuid():
+    '''Function for sql alchemy to generate uuid
+    '''
+    return str(uuid.uuid4())
+
 def get_sqa_pk_col(db_type):
     '''Wrapper to create PKs from a sequence, add to this for different database types.
     '''
@@ -33,7 +38,7 @@ class TextPart(Base):
     textpart_pk = get_sqa_pk_col(db_type)
     models = relationship('Embedding', back_populates='textpart')
     text_type = Column(TEXT)
-    uuid = Column(TEXT, default = str(uuid.uuid4()))
+    uuid = Column(TEXT, default= generate_uuid)
     raw_text = Column(TEXT, index=True, unique=True)
     serialized_file = Column(BLOB)
     file_name = Column(TEXT)
@@ -53,6 +58,10 @@ class Model(Base):
     vec_length = Column(INTEGER)
     pooling_technique = Column(TEXT)
     version_num = Column(TEXT)
+    uuid = Column(TEXT, default= generate_uuid)
+    #def __init__(self):
+    #    #TODO:  check for existing records before creating a new instance, if #    record exists, pull it from the db
+    #    pass
 
 class Embedding(Base):
     '''Many to many table relating text parts with embedding models, creating an embedding record. 
@@ -75,7 +84,8 @@ class Embedding(Base):
     # allow getter and setter to exist on alchemy columns
     #https://gist.github.com/luhn/4170996
     vector = synonym('_vector', descriptor=vector)
-
+    
+    uuid = Column(TEXT, default=generate_uuid)
     create_dttm = Column(DateTime, default=datetime.datetime.utcnow)
     textpart = relationship("TextPart", back_populates='models')
     model = relationship("Model", back_populates='textparts')
