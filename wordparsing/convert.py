@@ -1,13 +1,14 @@
 '''Convert file via request to Unoconv.'''
+import itertools
 import os
 import platform
 import re
+import warnings
 from pathlib import Path, PurePath
-import itertools
 
 import click
 import requests
-import warnings
+
 
 def build_conversion_url(conversion_url, file_type):
     return str(conversion_url + 'unoconv/' + file_type)
@@ -135,4 +136,3 @@ if __name__ == "__main__":
     u = Unoconv('http://s1:3000')
     #convert_file(u, 'docs/7787538.DOC', 'docx', 'converted')
     convert(unoconv=u, path='./tests/docs', ext='doc', file_format='docx', save_path='converted')
-
