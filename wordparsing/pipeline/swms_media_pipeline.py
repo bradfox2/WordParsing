@@ -31,12 +31,9 @@ from wordparsing.parse import parse_doc
 from wordparsing.services.unoconv import UNOCONV_URL
 from wordparsing.storage.data_classes import (Embedding, Model, Session,
                                               TextPart)
-from wordparsing.utils import cos_sim, heirarchical_dict_to_flat_list
+from wordparsing.utils import cos_sim, heirarchical_dict_to_flat_list, rm_dir
 
 load_dotenv(verbose=True, override=True)
-
-## Start a BERT Client for vectorization
-bc = BertClient(port=8190, port_out=8191)
 
 # Convert
 ## Start a Unoconv Server for document conversion
@@ -74,14 +71,14 @@ convert_to = 'docx'
 ## set parsed file dir 
 parse_file_dir = './parsed'
 
-#TODO: This will need to be multithreaded to be fast enough.  Currently about 3s per record.
+#TODO: Mulithread pipeline.
 
 @click.command()
 @click.option('--commit', help='Commit these changes to database.')
-def run_pipe(commit):        
+@click.option('--keep_files', help='Commit these changes to database.')
+def run_pipe(commit, keep_files):        
     processing_queue = Queue()
     error_queue = Queue()
-    m = None # empty m for model object
 
     for f in swms_docs:
         processing_queue.put(f)
@@ -111,11 +108,9 @@ def run_pipe(commit):
             embedding = embed_json_dumb(file_path, bert)
 
             # Store
-            #TODO: Refactor arguments here to be constructed from other classes, maybe a factory that can produce the data classes based on input files.
+            # TODO: Refactor arguments here to be constructed from other classes, maybe a factory that can produce the data classes based on input files.
 
-            #TODO: May need to consider having common object(s) that moves through the pipeline, or will have to pass all the intial file information along.
-
-            #TODO: Keep these files in memory, somehow.
+            # TODO: May need to consider having common object(s) that moves through the pipeline, or will have to pass all the intial file information along.
 
             with open(Path(f.path),'rb') as fle:
                 file_blob = fle.read()
@@ -138,6 +133,7 @@ def run_pipe(commit):
             e = Embedding(vector=embedding[0])
 
             new_t = sess.query(TextPart).filter(TextPart.file_hash == t.file_hash).first()
+            
             if new_t:
                 t = new_t
 
@@ -150,7 +146,7 @@ def run_pipe(commit):
                 sess.commit()
 
         except Exception as e:
-            #TODO: Persist these convrsion errors, maybe add them to another db table?
+            # TODO: Persist these convrsion errors, maybe add them to another db table?
             print(f"{f.path} failed conversion.")
             print(e)
             sess.rollback()
@@ -158,6 +154,9 @@ def run_pipe(commit):
         
         finally:
             sess.close()
+            if not keep_files:
+                rm_dir('./converted')
+                rm_dir('./parsed')
         
 if __name__ == "__main__":
     run_pipe() # pylint: disable=no-value-for-parameter

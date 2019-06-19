@@ -1,6 +1,4 @@
 ''' implement bert embedding service '''
-#TODO: Come up with a way to start model services and maybe register the model objects with a central registry so that information remains constant throughout the project.
-
 #1.3s for 150 bert calls on 1080TI
 #21s for 150 bert calls on i5-8600k
 
@@ -13,6 +11,8 @@ from wordparsing.embed import EmbeddingService
 bc = BertClient(port=8190, port_out=8191)
 
 class BertEmbService(EmbeddingService):
+    ''' embedding service using bert-as-a-service module'''
+
     def __init__(self, service_name, output_len, version):
         super().__init__(service_name, output_len, version)
         self.service_name = service_name

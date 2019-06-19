@@ -12,14 +12,13 @@ import numpy as np
 from bert_serving.client import BertClient
 
 from wordparsing.convert import Unoconv, convert
-
 # Embed
 ##TODO: Clean up data structure for embedding object
 from wordparsing.embed import embed_json_dumb
-
 # Parse
 ### parse the docxs
 from wordparsing.parse import parse_doc
+from wordparsing.services.bert.bert import BertEmbService
 #start a unoconv serivce as docker container
 from wordparsing.services.unoconv import UNOCONV_URL
 from wordparsing.storage import engine
@@ -27,34 +26,31 @@ from wordparsing.storage.data_classes import (Embedding, Model, Session,
                                               TextPart)
 from wordparsing.utils import cos_sim, heirarchical_dict_to_flat_list
 
-## Start a BERT Client for vectorization
-bc = BertClient(port=8190, port_out=8191)
-
 # Convert
 ## Start a Unoconv Server for document conversion
 u = Unoconv(UNOCONV_URL)
 
-### specify conversion path
-files_dir = Path('./tests/docs')
-
-### specify save directory 
-converted_dir = './tests/pipeline/converted'
-
-### specify conversion from and to
-convert_from = 'doc'
-convert_to = 'docx'
-
-## set parsed file dir 
-parse_file_dir = './tests/pipeline/parsed'
-
 @click.command()
+@click.command('--from_files_dir', help='Directory of files to be converted.')
+@click.command('--converted_files_dir', default='./converted', help='Directory to store converted files.')
+@click.command('--convert_from_type', default='doc', help='Three letter extension of convert from type.')
+@click.command('--convert_to_type', default='docx', help='Convert to this file type. Docx is supported right now.')
+@click.command('--parsed_file_directory', default='./parsed', help='Temp storage directory for parsed files.')
 @click.option('--commit', help='Commit these changes to database.')
-def run_pipe(commit):        
+def run_pipe(from_files_dir, converted_files_dir, convert_from_type, convert_to_type, parsed_file_directory, commit):        
     processing_queue = Queue()
     error_queue = Queue()
 
-    for f in files_dir.rglob('*.'+convert_from):
+    for f in from_files_dir.rglob('*.' + convert_from_type):
         processing_queue.put(f)
+
+    #define embedding service
+    bert = BertEmbService('BERT', 768, '0.1')
+    
+    m = Model(technique=bert.service_name,
+              vec_length=bert.output_len,
+              pooling_technique=bert.pooling_type,
+              version_num=bert.version)
 
     while not processing_queue.empty():
 
@@ -65,11 +61,11 @@ def run_pipe(commit):
 
         try:
             f = processing_queue.get()
-            convert_path = convert(u, f, convert_from, convert_to, converted_dir)
-            file_path = parse_doc(convert_path, parse_file_dir)
+            convert_path = convert(u, f, convert_from_type, convert_to_type, converted_files_dir)
+            file_path = parse_doc(convert_path, parsed_file_directory)
 
             # dict where file path is key, (embedding, embedding style, embedding pooling technique) is value
-            embedding, model_type, pooling_type = embed_json_dumb(file_path)
+            embedding = embed_json_dumb(file_path, bert)
 
             # Store
             #TODO: Refactor arguments here to be constructed from other classes, maybe a factory that can produce the data classes based on input files.
@@ -93,11 +89,6 @@ def run_pipe(commit):
                         json_str=json.dumps(raw_json),
                         file_hash=hash_of_file.hexdigest(),
                         hash_algo=hash_of_file.name)
-
-            m = Model(technique=model_type,
-                    vec_length=len(embedding[0]),
-                    pooling_technique=pooling_type,
-                    version_num='test')
 
             e = Embedding(vector=embedding[0])
 
