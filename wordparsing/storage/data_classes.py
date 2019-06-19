@@ -40,7 +40,7 @@ class TextPart(StorageBase):
     text_type = Column(TEXT)
     uuid = Column(TEXT, default= generate_uuid)
     raw_text = Column(TEXT, index=True, unique=True)
-    serialized_file = Column(BLOB)
+    #serialized_file = Column(BLOB) bloats the database size
     file_name = Column(TEXT)
     json_str = Column(TEXT)
     file_hash = Column(TEXT, index=True, unique=True)
@@ -109,12 +109,13 @@ if __name__ == "__main__":
     #insert one test record
     with open('./assets/test_doc.docx','rb') as f:
         blob = f.read()
+        hash_of_file = sha256(blob)
+
     json_test = json.dumps({'a':['testing1', 'testing2']})
-    hash_of_file = sha256(blob)
     
     t = TextPart(text_type="test text type",
                  raw_text="test raw text",
-                 serialized_file=blob,
+                 #serialized_file=blob,
                  file_name='test file name',
                  json_str=json_test,
                  file_hash=hash_of_file.hexdigest(),

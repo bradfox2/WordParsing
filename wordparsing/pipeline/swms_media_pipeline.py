@@ -119,7 +119,7 @@ def run_pipe(commit):
 
             t = TextPart(text_type="Test Pipeline Document, Work Instruction",
                         raw_text='\n'.join(raw_text),
-                        serialized_file=file_blob,
+                        #serialized_file=file_blob,
                         file_name=Path(f.path).parts[-1],
                         json_str=json.dumps(raw_json),
                         file_hash=hash_of_file.hexdigest(),
