@@ -1,6 +1,9 @@
 #large model files
 assets/models
 
+#db
+text.db
+
 #conversions
 converted/
 parsed/
