@@ -81,10 +81,20 @@ parse_file_dir = './parsed'
 def run_pipe(commit):        
     processing_queue = Queue()
     error_queue = Queue()
+    m = None # empty m for model object
 
     for f in swms_docs:
         processing_queue.put(f)
 
+    #define embedding service
+    from wordparsing.services.bert.bert import BertEmbService
+    bert = BertEmbService('BERT', 768, '0.1')
+    
+    m = Model(technique=bert.service_name,
+            vec_length=bert.output_len,
+            pooling_technique=bert.pooling_type,
+            version_num=bert.version)
+    
     while not processing_queue.empty():
 
         print(processing_queue.qsize())
@@ -98,7 +108,7 @@ def run_pipe(commit):
             file_path = parse_doc(convert_path, parse_file_dir)
 
             # dict where file path is key, (embedding, embedding style, embedding pooling technique) is value
-            embedding, model_type, pooling_type = embed_json_dumb(file_path)
+            embedding = embed_json_dumb(file_path, bert)
 
             # Store
             #TODO: Refactor arguments here to be constructed from other classes, maybe a factory that can produce the data classes based on input files.
@@ -125,11 +135,6 @@ def run_pipe(commit):
                         file_hash=hash_of_file.hexdigest(),
                         hash_algo=hash_of_file.name)
 
-            m = Model(technique=model_type,
-                    vec_length=len(embedding[0]),
-                    pooling_technique=pooling_type,
-                    version_num='test')
-
             e = Embedding(vector=embedding[0])
 
             new_t = sess.query(TextPart).filter(TextPart.file_hash == t.file_hash).first()
@@ -155,4 +160,4 @@ def run_pipe(commit):
             sess.close()
         
 if __name__ == "__main__":
-    run_pipe()
+    run_pipe() # pylint: disable=no-value-for-parameter

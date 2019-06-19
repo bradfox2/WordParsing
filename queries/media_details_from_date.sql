@@ -14,3 +14,4 @@ where
     and lower(md.server_path) like '%.doc'
 ORDER BY
     wmech_db_id DESC
+fetch first 25 rows only
