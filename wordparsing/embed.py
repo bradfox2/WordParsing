@@ -3,11 +3,9 @@
 #bert-serving-start -model_dir model/uncased_L-12_H-768_A-12/ -tuned_model_dir=model/classification_fine_tuning_test_1/ -ckpt_name="model.ckpt-343" -num_worker=1 -port 8190 -port_out 8191 -max_seq_len 100
 
 from wordparsing.utils import cos_sim, heirarchical_dict_to_flat_list
-from timeit import default_timer as timer
 #1.3s for 150 bert calls on 1080TI
 #21s for 150 bert calls on i5-8600k
 
-start = timer()
 num_bert_calls = 0 
 
 from bert_serving.client import BertClient
@@ -46,7 +44,6 @@ def embed_json_dumb(file_path):
 
 if __name__ == '__main__':
 
-
     ### doc 1   
     with open('tests/converts/8218200.json') as f:
         doc = json.load(f)
@@ -84,7 +81,3 @@ if __name__ == '__main__':
 
     #sim
     cos_sim(d1_a[0],d2_a[0])
-
-    end = timer()
-    print(end - start)
-    print(num_bert_calls)
