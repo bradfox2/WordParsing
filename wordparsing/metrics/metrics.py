@@ -50,12 +50,11 @@ def generate_tsne(query):
     plt.show()
 
 def cos_sim(query):
-     """Generate pairwise cosine simliarities of Embedding vectors.
+    """Generate pairwise cosine simliarities of Embedding vectors.
 
     Arguments:
         query {sqlalchemy.orm.Query} -- SQLAlchemy query object that will return embedding objects.
     """
-    raise NotImplementedError
     #TODO: fix cosine similarity
     
     #emb = query
@@ -69,12 +68,12 @@ def cos_sim(query):
     #embobj = sess.query(Embedding).filter(Embedding.uuid.in_((l2[:2]))).all()
     #epk = [e.textpart_pk for e in embobj]
     #[e.textpart_pk for e in sess.query(TextPart).filter(TextPart.textpart_pk.in_(epk)).all()]
-
+    pass
 
 if __name__ == "__main__":
     # Example TSNE
     sess = Session(engine)
     query = sess.query(Embedding)
-    TSNE(query)
+    generate_tsne(query)
     sess.close()
 
