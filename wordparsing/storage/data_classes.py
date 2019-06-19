@@ -67,8 +67,8 @@ class Embedding(StorageBase):
     '''Many to many table relating text parts with embedding models, creating an embedding record. 
     '''
     __tablename__ = 'embedding'
-    textpart_pk = Column(INTEGER, ForeignKey('textpart.textpart_pk'), primary_key=True)
-    model_pk = Column(INTEGER, ForeignKey('model.model_pk'), primary_key=True)
+    textpart_fk = Column(INTEGER, ForeignKey('textpart.textpart_pk'), primary_key=True)
+    model_fk = Column(INTEGER, ForeignKey('model.model_pk'), primary_key=True)
     _vector = Column('vector', BLOB)
 
     @property
