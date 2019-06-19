@@ -132,7 +132,6 @@ def convert(unoconv, path, ext, file_format, save_path):
     return None
 
 if __name__ == "__main__":
-    #//TODO: Spin up UNOCOV docker service automatically
     u = Unoconv('http://s1:3000')
     #convert_file(u, 'docs/7787538.DOC', 'docx', 'converted')
-    convert(unoconv=u, path='./tests/docs', ext='doc', file_format='docx', save_path='converted')
+    #convert(unoconv=u, path='./tests/docs', ext='doc', file_format='docx', save_path='converted')

@@ -1,3 +1,13 @@
+#large model files
+assets/models
+
+#conversions
+converted/
+parsed/
+
+#site specific queries
+#queries/
+
 #VS Code Settings
 .vscode
 

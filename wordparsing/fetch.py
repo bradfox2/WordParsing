@@ -1,4 +1,4 @@
-"""Fetch documents from SWMS Media"""
+"""Fetch document from SWMS Media and return a path to the file"""
 import importlib
 import inspect
 import os
@@ -11,20 +11,32 @@ from docx import Document as docx_doc
 from docx import styles
 from dotenv import load_dotenv
 
+from sqlalchemy import create_engine, Column
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session
+from sqlalchemy.dialects.sqlite import (
+    BLOB, BOOLEAN, CHAR, DATE, DATETIME, DECIMAL, FLOAT, INTEGER, JSON,
+    NUMERIC, SMALLINT, TEXT, TIME, TIMESTAMP, VARCHAR)
+
 from wordparsing.utils import count_files, count_files_fast
 
-load_dotenv(verbose=True, override=True)
-DEBUG = os.getenv('DEBUG')
-SWMS_MEDIA_FILER_PATH = Path(os.getenv('SWMS_MEDIA_FILER_PATH'))
-SWMS_MEDIA_USER_NAME = os.getenv('SWMS_MEDIA_USER_NAME')
-SWMS_MEDIA_USER_PASSWORD = os.getenv('SWMS_MEDIA_USER_PASSWORD')
+from dotenv import load_dotenv
 
-#files = os.scandir(SWMS_MEDIA_FILER_PATH)
+load_dotenv(verbose=True, override=True)
+
+NIMS_CONNECTION_STRING = os.getenv('NIMS_CONNECTION_STRING')
+engine = create_engine(NIMS_CONNECTION_STRING)
+Base = declarative_base()
+
+class NimsMediaDetail(Base):
+    __tablename__ = 'media_details'
+    db_id = Column('db_id', INTEGER, primary_key=True)
+    server_path = Column('server_path', VARCHAR(length=2000))
 
 class Document(object):
-    def __init__(self, file):
-        self.docx_obj = docx_doc(file)
-        self.file = file
+    # TODO: need a factory here to handle different types of documents.
+    def __init__(self, fle):
+        self.file = fle
 
 class RemoteMount(object):
     '''Mount a remote file system'''
@@ -45,10 +57,11 @@ class RemoteMount(object):
 
     def mount_remote(self):
         if os.name == 'nt':
-            if not self._remote_path.exists():
-                print("Mounting")
+            if not os.path.exists(self._remote_path):
+                print("Mounting...")
                 mount_command = self._prep_windows_mount_command(self.user, self.password, self._remote_path)
                 self._mounted_path = self._remote_path
+                print('Mounted.')
             else:
                 warnings.warn("Remote already mounted.")
                 self._mounted_path = self._remote_path
@@ -87,38 +100,67 @@ class RemoteMount(object):
         return f'sudo mount -t cifs {mount_path} {remote_path} -o user={user},password={password},domain=nixcraft'
 
     def _prep_windows_mount_command(self, user, password, remote_path):
-        return f"net use /user:{user} {remote_path} {password}"
+        # handle str since Path with UNC drives does not appear to want to work properly, 
+        # and windows does not want to allow a connection to a domain under a different username.
+        # mounting just the root drive appears to work though. 
+        remote_path = [i for i in str(SWMS_MEDIA_FILER_PATH).split("\\") if i is not ""][0]
+        return f"net use /user:{user} {remote_path.drive} {password}"
 
 class SWMSDocument(Document):
 
     @classmethod
-    def all_from_wm_id(cls, wm_id, dbcon):
+    def all_from_wm_id(cls, wm_id, engine, remote_mount):
         """ Returns a list of SWMSDocument objects related to the provided WM_ID """
-        #TODO: get media ids from swms
-        media_ids = []
-        return [cls.from_swms_media_id(x, dbcon) for x in media_ids]
+        #TODO: map relationships into sql alchemy classes
+        with open('queries\media_details_from_wmid.sql') as f:
+            stmt = (''.join(f.readlines()))
+        
+        with engine.connect() as con:
+            data = {"wmid":wm_id}
+            rs = con.execute(stmt, **data)
+            media_ids = list(rs)
+
+        return [cls.from_filer_file_name(remote_mount, file_name, media_dbid) for wmwt_dbid, file_name, media_dbid in media_ids]
 
     @classmethod
-    def from_swms_media_id(cls, media_id, dbcon):
-        #TODO: use dbcon to query SWMS, get path
-        path = None
-        return cls.from_file_path(path)
+    def all_from_raw_query(cls, query_file_path, filter_dict, engine, remote_mount):
+        """ Returns a list of SWMSDocument objects related to the provided WM_ID.
+            Query needs to return a WMWT dbid, a file name, and a media dbid in that order.
+            Filter dict should have keys of the parameterized filters, and values of the passed parameters.
+        """
+        #TODO: Unpack the iterator of unknown parameters instead of requiring hard coded.
+        #TODO: map relationships into sql alchemy classes
+
+        with open(query_file_path) as f:
+            stmt = (''.join(f.readlines()))
+        with engine.connect() as con:
+            rs = con.execute(stmt, **filter_dict)
+            media_ids = list(rs)
+
+        return [cls.from_filer_file_name(remote_mount, file_name, media_dbid) for wmwt_dbid, file_name, media_dbid in media_ids]
 
     @classmethod
-    def from_file_path(cls, file_path):
-        #TODO: fix this
+    def from_swms_media_dbid(cls, media_dbid, session, remote_mount):
+        media = session.query(NimsMediaDetail).filter_by(db_id = media_dbid).first()
+        full_path = remote_mount.mounted_path + media.server_path
+        return cls.from_absolute_file_path(full_path, media_dbid)
+
+    @classmethod
+    def from_absolute_file_path(cls, file_path, media_dbid):
+        '''fetch file from absolute path'''
         full_path = Path(file_path)
-        return SWMSDocument(Document(full_path))
+        return(SWMSDocument(Document(full_path), media_dbid))
 
     @classmethod
-    def from_filer_file_name(cls, remote_mount, file_name):
-        '''remote mount and file name'''
+    def from_filer_file_name(cls, remote_mount, file_name, media_dbid):
+        '''fetch file from remote mount and file name'''
         full_path = remote_mount.mounted_path + file_name
-        return(SWMSDocument(Document(full_path)))
-
-    def __init__(self, document):
+        return(SWMSDocument(Document(full_path), media_dbid))
+    
+    def __init__(self, document, media_dbid):
         self.document = document
         self.path = document.file
+        self.media_dbid = media_dbid
 
 class WorkInstruction(SWMSDocument):
     def __init__(self, wm_id, wt_id, rev, typ, file_path, SWMS_MEDIA_ID):
@@ -132,8 +174,27 @@ class WorkInstruction(SWMSDocument):
         self.steps = []     
     
 class WorkInstructionStep(SWMSDocument):
-    #TODO: Refactor fetching classes and types vs data_classes types, and doc_types as they are stored in the db
+    #TODO: Refactor fetching classes and types vs data_classes types, and doc_types as they are stored in the db.
     pass
 
 if __name__ == '__main__':
-    pass
+
+    load_dotenv(verbose=True, override=True)
+    DEBUG = os.getenv('DEBUG')
+    SWMS_MEDIA_FILER_PATH = Path(os.getenv('SWMS_MEDIA_FILER_PATH'))
+    SWMS_MEDIA_USER_NAME = os.getenv('SWMS_MEDIA_USER_NAME')
+    SWMS_MEDIA_USER_PASSWORD = os.getenv('SWMS_MEDIA_USER_PASSWORD')
+
+    #load NIMS connection information
+    session = Session(engine)
+
+    smws_filer_mount = RemoteMount(SWMS_MEDIA_USER_NAME,
+                                SWMS_MEDIA_USER_PASSWORD,
+                                None,
+                                SWMS_MEDIA_FILER_PATH)
+
+    a = SWMSDocument.from_swms_media_dbid(9322464, session, smws_filer_mount)
+
+    #return: 
+    b = SWMSDocument.all_from_wm_id(5144071, engine, smws_filer_mount)
+

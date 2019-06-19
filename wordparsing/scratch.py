@@ -1,28 +1,39 @@
-'''pipeline test'''
 
-#idea - take a list of document ids(database ids/file names/etc), and compare these against files that have already been captured in a database. for any files in one list
+#automap nims database
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, MetaData
 
-from wordparsing.fetch import (SWMS_MEDIA_FILER_PATH, SWMS_MEDIA_USER_NAME,
-                               SWMS_MEDIA_USER_PASSWORD, Document, RemoteMount,
-                               SWMSDocument, WorkInstruction)
+m = MetaData(schema='NIMS')
 
-from wordparsing.parse import parse_doc
+Base = automap_base(bind = engine, metadata=m)
 
-rmtmnt = RemoteMount(SWMS_MEDIA_USER_NAME,
-SWMS_MEDIA_USER_PASSWORD,
-None,
-SWMS_MEDIA_FILER_PATH)
+# engine, suppose it has two tables 'user' and 'address' set up
+engine = create_engine('', echo='debug')
 
-rmtmnt.mounted_path
+# reflect the tables
+Base.prepare(engine, reflect=True)
 
-document = Document(rmtmnt.mounted_path + '9312122.DOCX')
+# mapped classes are now created with names by default
+# matching that of the table name.
 
-doc = SWMSDocument.from_filer_file_name(rmtmnt, '9312122.DOCX')
+session = Session(engine)
 
-document.file
+session.query(Base.classes.media_details).first()
 
-parse_doc(doc.path,'./tests/converts/')
+# rudimentary relationships are produced
+session.add(Address(email_address="foo@bar.com", user=User(name="foo")))
+session.commit()
 
-wi = WorkInstruction(None,None,None,None,document.file,None)
+# collection-based relationships are by default named
+# "<classname>_collection"
+print (u1.address_collection)
 
-wi.from_file_path()
+Base.classes.keys()
+
+session.query(Base.classes.s_work_tasks).first()
+
+from sqlalchemy.inspection import inspect 
+inspect(Base.classes.l_work_mechanisms).relationships.items()
+
+Base.classes.s_work_tasks.__table__

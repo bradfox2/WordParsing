@@ -6,10 +6,20 @@ $ pytest #--uno_server_url UNOCONV Server --keep_files True to keep conversion f
 ```
 
 ## Bert as a service startup 
+- Service must be started independently for now, in a project that has TF as a dependency, with a trained BERT model. 
 - running w finetuned model from cr classification training
 ```bash
 $ bert-serving-start -model_dir model/uncased_L-12_H-768_A-12/ -tuned_model_dir=model/classification_fine_tuning_test_1/ -ckpt_name="model.ckpt-343" -num_worker=1 -port 8190 -port_out 8191 -max_seq_len 100
 ```
+or using a google model 
+
+```bash
+$ bert-serving-start -model_dir models/uncased_L-12_H-768_A-12/ -num_worker=1 -port 8190 -port_out 8191 -max_seq_len 100
+```
+
+## Unoconv service startup
+- https://cloud.docker.com/u/bradfox2/repository/docker/bradfox2/unoconv
+- If UNOCONV_URL is not defined in the environment, the preceeding docker serivce will be started. 
 
 ## Pipeline
 

@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session, backref, relationship, synonym
 
 from wordparsing.storage import db_type, engine
 
-Base = declarative_base()
+StorageBase = declarative_base()
 
 def generate_uuid():
     '''Function for sql alchemy to generate uuid
@@ -31,7 +31,7 @@ def get_sqa_pk_col(db_type):
     '''
     return Column(Integer, Sequence('text_part_id'), primary_key=True)
     
-class TextPart(Base):
+class TextPart(StorageBase):
     '''Table with records that describe chunks of text.
     '''
     __tablename__ = 'textpart'
@@ -47,7 +47,7 @@ class TextPart(Base):
     hash_algo = Column(TEXT)
     create_dttm = Column(DateTime, default=datetime.datetime.utcnow)
 
-class Model(Base):
+class Model(StorageBase):
     '''Table with records that describe embedding models.
     '''
     __tablename__ = 'model'
@@ -63,7 +63,7 @@ class Model(Base):
     #    #TODO:  check for existing records before creating a new instance, if #    record exists, pull it from the db
     #    pass
 
-class Embedding(Base):
+class Embedding(StorageBase):
     '''Many to many table relating text parts with embedding models, creating an embedding record. 
     '''
     __tablename__ = 'embedding'
@@ -103,7 +103,7 @@ class Embedding(Base):
         out.seek(0)
         return out.read()
 
-Base.metadata.create_all(engine)
+StorageBase.metadata.create_all(engine)
 
 if __name__ == "__main__":
     #insert one test record
