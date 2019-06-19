@@ -40,8 +40,6 @@ load_dotenv(verbose=True, override=True)
 u = Unoconv(UNOCONV_URL)
 
 ### specify conversion path
-#files_dir = Path('./tests/docs')
-DEBUG = os.getenv('DEBUG')
 SWMS_MEDIA_FILER_PATH = Path(os.getenv('SWMS_MEDIA_FILER_PATH'))
 SWMS_MEDIA_USER_NAME = os.getenv('SWMS_MEDIA_USER_NAME')
 SWMS_MEDIA_USER_PASSWORD = os.getenv('SWMS_MEDIA_USER_PASSWORD')
