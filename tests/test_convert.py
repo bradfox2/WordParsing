@@ -37,15 +37,14 @@ def no_rsrc(request):
     request.addfinalizer(rm_conv_files)
     return no_rsrc
 
-def test_convert(uno_server_url, no_rsrc):
-    """ Ensure 'convert' converts everything in ./tests/docs/.
-
-    uno_server_url is a command line argument, see conftest.py
-    
+def test_convert(make_unoconv_container, no_rsrc):
+    """ Ensure 'convert' converts everything in ./tests/docs/.    
     no_rsrc is a placeholder fixture so that the converted files are always torn down, no resources are generated from this fixture.
     """
+    uno_server_url,_ = make_unoconv_container
+    print(uno_server_url)
     u = Unoconv(uno_server_url)    
-    assert convert(unoconv=u, path='tests/docs', ext='doc', file_format='docx', save_path='tests/converted') is True
+    assert convert(unoconv=u, path='tests/docs', ext='doc', file_format='docx', save_path='tests/converted') is not None
     assert test_converted_docs.exists()
     assert test_converted_docs.is_dir()
     assert len(list(test_converted_docs.glob('*.docx'))) == 2

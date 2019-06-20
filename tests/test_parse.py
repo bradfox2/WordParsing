@@ -30,7 +30,7 @@ def save_path(keep_files):
         rm_dir(save_dir)
 
 def test_dir_parse(save_path):
-    assert parse_doc(doc_path, save_path) == True
+    assert parse_doc(doc_path, save_path) == Path(save_path)
     assert count_files(save_path) >= 2
 
     with open(save_path.joinpath('7787538.json')) as f:
@@ -41,7 +41,7 @@ def test_dir_parse(save_path):
     assert len(j['Root']) == 74
     
 def test_singlefile_parse(save_path):
-    assert parse_doc(doc_path.joinpath('7787538.docx'), save_path) == True
+    assert parse_doc(doc_path.joinpath('7787538.docx'), save_path) == Path(save_path).joinpath(Path('7787538.json'))
     with open(save_path.joinpath('7787538.json')) as f:
         j = json.load(f)
     

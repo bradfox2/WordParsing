@@ -8,6 +8,7 @@ from pathlib import Path, PurePath
 
 import click
 import requests
+from wordparsing.services.unoconv import start_unoconv
 
 
 def build_conversion_url(conversion_url, file_type):
@@ -132,6 +133,8 @@ def convert(unoconv, path, ext, file_format, save_path):
     return None
 
 if __name__ == "__main__":
-    u = Unoconv('http://s1:3000')
-    #convert_file(u, 'docs/7787538.DOC', 'docx', 'converted')
-    #convert(unoconv=u, path='./tests/docs', ext='doc', file_format='docx', save_path='converted')
+    url,unoobj = start_unoconv('uno',5646)
+    u = Unoconv(url)
+    convert_file(u, 'docs/7787538.DOC', 'docx', 'converted')
+    convert(unoconv=u, path='./tests/docs', ext='doc', file_format='docx', save_path='converted')
+    unoobj.stop()
