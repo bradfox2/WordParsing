@@ -9,8 +9,8 @@ from queue import Queue
 
 import click
 import numpy as np
-from bert_serving.client import BertClient
 
+from wordparsing.config import UNOCONV_SERVER_URL
 from wordparsing.convert import Unoconv, convert
 # Embed
 ##TODO: Clean up data structure for embedding object
@@ -19,8 +19,8 @@ from wordparsing.embed import embed_json_dumb
 ### parse the docxs
 from wordparsing.parse import parse_doc
 from wordparsing.services.bert.bert import BertEmbService
+from wordparsing.services.unoconv import start_unoconv
 #start a unoconv serivce as docker container
-from wordparsing.services.unoconv import UNOCONV_URL
 from wordparsing.storage import engine
 from wordparsing.storage.data_classes import (Embedding, Model, Session,
                                               TextPart)
@@ -28,20 +28,22 @@ from wordparsing.utils import cos_sim, heirarchical_dict_to_flat_list
 
 # Convert
 ## Start a Unoconv Server for document conversion
-u = Unoconv(UNOCONV_URL)
+if UNOCONV_SERVER_URL is None:
+    UNOCONV_SERVER_URL,_ = start_unoconv('unoconv', 3000)
+u = Unoconv(UNOCONV_SERVER_URL)
 
 @click.command()
-@click.command('--from_files_dir', help='Directory of files to be converted.')
-@click.command('--converted_files_dir', default='./converted', help='Directory to store converted files.')
-@click.command('--convert_from_type', default='doc', help='Three letter extension of convert from type.')
-@click.command('--convert_to_type', default='docx', help='Convert to this file type. Docx is supported right now.')
-@click.command('--parsed_file_directory', default='./parsed', help='Temp storage directory for parsed files.')
-@click.option('--commit', help='Commit these changes to database.')
+@click.option('--from_files_dir', default='./tests/docs', help='Directory of files to be converted.')
+@click.option('--converted_files_dir', default='./converted', help='Directory to store converted files.')
+@click.option('--convert_from_type', default='doc', help='Three letter extension of convert from type.')
+@click.option('--convert_to_type', default='docx', help='Convert to this file type. Docx is supported right now.')
+@click.option('--parsed_file_directory', default='./parsed', help='Temp storage directory for parsed files.')
+@click.option('--commit', default=True, help='Commit these changes to database.')
 def run_pipe(from_files_dir, converted_files_dir, convert_from_type, convert_to_type, parsed_file_directory, commit):        
     processing_queue = Queue()
     error_queue = Queue()
 
-    for f in from_files_dir.rglob('*.' + convert_from_type):
+    for f in Path(from_files_dir).rglob('*.' + convert_from_type):
         processing_queue.put(f)
 
     #define embedding service
@@ -84,7 +86,7 @@ def run_pipe(from_files_dir, converted_files_dir, convert_from_type, convert_to_
 
             t = TextPart(text_type="Test Pipeline Document, Work Instruction",
                         raw_text='\n'.join(raw_text),
-                        serialized_file=file_blob,
+                        #serialized_file=file_blob,
                         file_name=f.parts[-1],
                         json_str=json.dumps(raw_json),
                         file_hash=hash_of_file.hexdigest(),

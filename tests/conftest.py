@@ -19,4 +19,4 @@ def make_unoconv_container():
     ''' start and yield an unoconv test docker container'''
     unourl, unoobj = start_unoconv('uno_test', 3001)
     yield unourl, unoobj
-    #unoobj.stop()
+    unoobj.stop()
