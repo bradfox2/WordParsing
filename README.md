@@ -1,7 +1,7 @@
 # Parsing Word Documents
 
 ## Overview
-Project will fetch, convert, embed and store document embeddings in a database.  A Unoconv server is used for universal conversion and is provided as a passed URL parameter, or an auto-started Docker Container.  Embedding is performed via services specified in wordparsing/services/... .py.  The BERT-as-a-service project is used by default, but should be seperately started.  Embedded representations are stored in a sqlite database, along with embedding model details, originating text, and a unique tie back to the source record.
+Project will fetch, convert, embed and store document embeddings in a sqlite database.  A Unoconv server is used for universal conversion and is provided as a passed URL parameter, or an auto-started Docker Container.  Embedding is performed via services specified in wordparsing/services/... .py.  The BERT-as-a-service project is used by default, but should be seperately started.  Embedded representations are stored in a sqlite database, along with embedding model details, originating text, and a unique tie back to the source record.
 
 ## How To Run
 
