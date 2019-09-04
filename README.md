@@ -15,7 +15,7 @@ Pipelines are specified to process documents(docs, for now) into a converted for
 
 ## Bert as a service startup
 
-If desired to use BERT, the service highly recommended to be started independently, with a trained BERT model. Else it will be started with a pretrained model that must be referenced in config.BERT_MODEL_DIR.
+If desired to use BERT, the service is recommended to be started independently with a trained BERT model. Else it will be started with a pretrained model that must be referenced in config.BERT_MODEL_DIR.
  
 - running with finetuned model from previous classification task training:
 ```bash
